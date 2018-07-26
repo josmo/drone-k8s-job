@@ -1,0 +1,16 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pi2
+spec:
+  template:
+    spec:
+      containers:
+      - name: countdown
+        image: centos:7
+        command:
+          - "bin/bash"
+          - "-c"
+          - "for i in `seq 5` ; do echo $i ; sleep 5 ; done"
+      restartPolicy: Never
+  backoffLimit: 0
