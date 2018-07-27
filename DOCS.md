@@ -5,8 +5,8 @@ The following parameters are used to configure this plugin:
 
 - `url` - url to your cluster server
 - `token` - Token used to connect to the cluster
-- `cert` - cert to connect to cluster //Not implemented
-- `insecure` - allow for insecure cluster connection //Not verified
+- `ca` - certificate auth to connect to cluster
+- `insecure` - allow for insecure cluster connection 
 - `namespace` - namespace (will use default if not set)  
 - `template` - file location for the job template [sample](job.yml)
 - `cleanup` - default true: will remove the job upon success or failure
@@ -40,4 +40,4 @@ deploy:
     timeout: 200
 ```
 
-if you want to add secrets for the token it's KUBERNETES_TOKEN, KUBERNETES_URL, JOB_TEMPLATE
+if you want to add secrets for the token it's KUBERNETES_TOKEN, KUBERNETES_URL, KUBERNETES_CA, JOB_TEMPLATE

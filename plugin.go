@@ -3,6 +3,7 @@ package main
 //TODO: This needs to be simplified a ton!
 //Just the initial hack
 import (
+	"encoding/base64"
 	log "github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
 	"io"
@@ -29,6 +30,7 @@ type (
 		URL         string
 		Token       string
 		Insecure    bool
+		Ca          string
 		Namespace   string
 		Template    string
 		Cleanup     bool
@@ -80,17 +82,8 @@ func (p Plugin) Exec() error {
 	if p.Config.Debug {
 		log.SetLevel(log.DebugLevel)
 	}
-	config := &rest.Config{
-		Host:            p.Config.URL,
-		BearerToken:     p.Config.Token,
-		TLSClientConfig: rest.TLSClientConfig{Insecure: p.Config.Insecure},
-	}
-	//create kube client interface and add to config
-	kubeClient, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return err
-	}
-	p.Config.KubeClient = kubeClient
+
+	p.Config.KubeClient, _ = p.createClient()
 
 	// parse the template file and do substitutions
 	txt, err := openAndSub(p.Config.Template, p)
@@ -188,6 +181,31 @@ func (p Plugin) Exec() error {
 		return delErr
 	}
 	return returnError
+}
+
+func (p Plugin) createClient() (kubernetes.Interface, error) {
+	tLSClientConfig := rest.TLSClientConfig{Insecure: p.Config.Insecure}
+	if p.Config.Ca != "" {
+		ca, err := base64.StdEncoding.DecodeString(p.Config.Ca)
+		if err != nil {
+			return nil, err
+		}
+		tLSClientConfig = rest.TLSClientConfig{Insecure: p.Config.Insecure, CAData: ca}
+	}
+
+	config := &rest.Config{
+		Host:            p.Config.URL,
+		BearerToken:     p.Config.Token,
+		TLSClientConfig: tLSClientConfig,
+	}
+	//create kube client interface and add to config
+	var client kubernetes.Interface
+	kubeClient, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	client = kubeClient
+	return client, nil
 }
 
 func containsValue(m map[string]bool, v bool) bool {

@@ -30,6 +30,11 @@ func main() {
 			Usage:  "kubernetes token",
 			EnvVar: "PLUGIN_TOKEN, KUBERNETES_TOKEN",
 		},
+		cli.StringFlag{
+			Name:   "ca",
+			Usage:  "Certificate Authority file encoded into base64: e.g: run: `cat ca.pem | base64` to get this value",
+			EnvVar: "PLUGIN_CA,KUBERNETES_CA",
+		},
 		cli.BoolFlag{
 			Name:   "insecure",
 			Usage:  "Insecure connection",
@@ -164,6 +169,7 @@ func run(c *cli.Context) error {
 			URL:       c.String("url"),
 			Token:     c.String("token"),
 			Insecure:  c.Bool("insecure"),
+			Ca:        c.String("ca"),
 			Namespace: c.String("namespace"),
 			Template:  c.String("template"),
 			Cleanup:   c.BoolT("cleanup"),
