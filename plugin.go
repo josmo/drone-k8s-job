@@ -35,7 +35,7 @@ type (
 		Cleanup     bool
 		Timeout     int64
 		Debug       bool
-		LoggingPods map[string]struct{}
+		LoggingPods map[string]bool
 		KubeClient  kubernetes.Interface
 	}
 	Build struct {
@@ -135,7 +135,7 @@ func (p Plugin) Exec() error {
 			}))
 
 	//Listening to pods
-	p.Config.LoggingPods = make(map[string]struct{})
+	p.Config.LoggingPods = make(map[string]bool)
 	informerFactory.Core().V1().Pods().Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			log.Debugf("Added %# v", pretty.Formatter(obj))
@@ -156,7 +156,12 @@ func (p Plugin) Exec() error {
 				if err != nil {
 					endMessage <- err
 				}
-				endMessage <- nil
+				p.Config.LoggingPods[pod.Name] = true
+				//Probably find a better way to know if everything is done :/
+				if !containsValue(p.Config.LoggingPods, false) {
+					endMessage <- nil
+				}
+
 			}
 			if pod.Status.Phase == apiv1.PodRunning {
 				err := p.writeOutContainerLogs(pod.Name, os.Stdout)
@@ -186,9 +191,18 @@ func (p Plugin) Exec() error {
 	return returnError
 }
 
+func containsValue(m map[string]bool, v bool) bool {
+	for _, x := range m {
+		if x == v {
+			return true
+		}
+	}
+	return false
+}
+
 func (p Plugin) writeOutContainerLogs(podName string, writer io.Writer) error {
 	if _, ok := p.Config.LoggingPods[podName]; !ok {
-		p.Config.LoggingPods[podName] = struct{}{}
+		p.Config.LoggingPods[podName] = false
 		req := p.Config.KubeClient.CoreV1().Pods(p.Config.Namespace).GetLogs(podName, &apiv1.PodLogOptions{
 			Follow: true,
 		})
