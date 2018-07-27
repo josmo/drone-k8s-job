@@ -3,9 +3,9 @@ package main
 //TODO: This needs to be simplified a ton!
 //Just the initial hack
 import (
-	"bufio"
 	log "github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
+	"io"
 	"io/ioutil"
 	"k8s.io/api/batch/v1"
 	apiv1 "k8s.io/api/core/v1"
@@ -20,6 +20,7 @@ import (
 	v12 "k8s.io/client-go/kubernetes/typed/batch/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
+	"os"
 	"time"
 )
 
@@ -79,7 +80,7 @@ func (p Plugin) Exec() error {
 		BearerToken:     p.Config.Token,
 		TLSClientConfig: rest.TLSClientConfig{Insecure: p.Config.Insecure},
 	}
-
+	//create kube client interface and add to config
 	kubeClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return err
@@ -96,6 +97,7 @@ func (p Plugin) Exec() error {
 		return err
 	}
 
+	//Create the job
 	var jobToCreate v1.Job
 	scheme := runtime.NewScheme()
 	codecs := serializer.NewCodecFactory(scheme)
@@ -103,20 +105,23 @@ func (p Plugin) Exec() error {
 	if e != nil {
 		log.Fatal("Error decoding yaml file to json", e)
 	}
-
 	jobClient := p.Config.KubeClient.BatchV1().Jobs(p.Config.Namespace)
 	job, err := jobClient.Create(&jobToCreate)
 	if err != nil {
 		return err
 	}
 
-	labelSelect := labels.Set(job.Spec.Selector.MatchLabels)
 	endMessage := make(chan error)
+
+	//Send error to end message if timer has run out
 	timeOutTimer := time.NewTimer(time.Duration(p.Config.Timeout) * time.Second)
 	go func() {
 		<-timeOutTimer.C
 		endMessage <- errors.New("Sorry reached the timeout, You may need to manually clean up the job!")
 	}()
+
+	//Label selector based on the job
+	labelSelect := labels.Set(job.Spec.Selector.MatchLabels) //might have a better way to do this?
 	informerFactory := informers.
 		NewSharedInformerFactoryWithOptions(p.Config.KubeClient, time.Second*30,
 			informers.WithNamespace(p.Config.Namespace), informers.WithTweakListOptions(func(options *metav1.ListOptions) {
@@ -126,12 +131,11 @@ func (p Plugin) Exec() error {
 	informerFactory.Batch().V1().Jobs().Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			log.Info("Added ", obj)
-			p.logJobContainers(informerFactory, job.Name, jobClient, labelSelect, endMessage)
+			p.logJobContainers(informerFactory, job.Name, jobClient, endMessage)
 		},
 		UpdateFunc: func(oldObj, newObj interface{}) {
 			job, _ := newObj.(v1.Job)
 			log.Info("Modified with status", job.Status)
-			//endMessage <- nil
 		},
 		DeleteFunc: func(obj interface{}) {
 			endMessage <- errors.New("Job was delete out of band")
@@ -146,7 +150,21 @@ func (p Plugin) Exec() error {
 	}
 	return returnError
 }
-func (p Plugin) logJobContainers(informerFactory informers.SharedInformerFactory, name string, jobClient v12.JobInterface, labelSelect labels.Set, ch chan<- error) error {
+
+func (p Plugin) writeOutContainerLogs(podName string, writer io.Writer) error {
+	req := p.Config.KubeClient.CoreV1().Pods(p.Config.Namespace).GetLogs(podName, &apiv1.PodLogOptions{
+		Follow: true,
+	})
+	readCloser, err := req.Stream()
+	if err != nil {
+		return err
+	}
+	defer readCloser.Close()
+	io.Copy(writer, readCloser)
+	return nil
+}
+
+func (p Plugin) logJobContainers(informerFactory informers.SharedInformerFactory, name string, jobClient v12.JobInterface, ch chan<- error) {
 	informerFactory.Core().V1().Pods().Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			log.Info("Added ", obj)
@@ -161,28 +179,14 @@ func (p Plugin) logJobContainers(informerFactory informers.SharedInformerFactory
 				ch <- nil
 			}
 			if pod.Status.Phase == apiv1.PodRunning {
-				req := p.Config.KubeClient.CoreV1().Pods(p.Config.Namespace).GetLogs(pod.Name, &apiv1.PodLogOptions{
-					Follow: true,
-				})
-				readCloser, err := req.Stream()
+				err := p.writeOutContainerLogs(pod.Name, os.Stdout)
 				if err != nil {
-					//return err
+					ch <- err
 				}
-				defer func() {
-					_ = readCloser.Close()
-					return
-				}()
-				scanner := bufio.NewScanner(readCloser)
-				for scanner.Scan() {
-					log.Info("Job Log: ", scanner.Text())
-				}
-
 			}
 		},
 	})
-
 	informerFactory.Start(wait.NeverStop)
-	return nil
 }
 
 func deleteJob(name string, jobClient v12.JobInterface, cleanup bool) error {
@@ -204,13 +208,4 @@ func openAndSub(templateFile string, p Plugin) (string, error) {
 	}
 	//potty humor!  Render trim toilet paper!  Ha ha, so funny.
 	return RenderTrim(string(t), p)
-}
-
-//we should really do a watch, but this is fine for now
-func (p Plugin) getPods(selector string) (*apiv1.PodList, error) {
-	pods, err := p.Config.KubeClient.CoreV1().Pods(p.Config.Namespace).List(metav1.ListOptions{LabelSelector: selector})
-	if err != nil {
-		return nil, errors.Wrapf(err, "Failed to list pods")
-	}
-	return pods, nil
 }
