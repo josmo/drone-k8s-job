@@ -3,24 +3,24 @@ package main
 //TODO: This needs to be simplified a ton!
 //Just the initial hack
 import (
-	log "github.com/Sirupsen/logrus"
-	"io/ioutil"
-	apiv1 "k8s.io/api/core/v1"
-	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/api/batch/v1"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/labels"
-	v12 "k8s.io/client-go/kubernetes/typed/batch/v1"
 	"bufio"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/informers"
-	"time"
-	"k8s.io/client-go/tools/cache"
+	log "github.com/Sirupsen/logrus"
+	"github.com/pkg/errors"
+	"io/ioutil"
+	"k8s.io/api/batch/v1"
+	apiv1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/util/wait"
+	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
+	"k8s.io/client-go/informers"
+	"k8s.io/client-go/kubernetes"
+	v12 "k8s.io/client-go/kubernetes/typed/batch/v1"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/cache"
+	"time"
 )
 
 type (
@@ -119,9 +119,9 @@ func (p Plugin) Exec() error {
 	}()
 	informerFactory := informers.
 		NewSharedInformerFactoryWithOptions(p.Config.KubeClient, time.Second*30,
-		informers.WithNamespace(p.Config.Namespace), informers.WithTweakListOptions(func(options *metav1.ListOptions) {
-			options.LabelSelector = labelSelect.String()
-		}))
+			informers.WithNamespace(p.Config.Namespace), informers.WithTweakListOptions(func(options *metav1.ListOptions) {
+				options.LabelSelector = labelSelect.String()
+			}))
 
 	informerFactory.Batch().V1().Jobs().Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
@@ -175,7 +175,6 @@ func (p Plugin) logJobContainers(informerFactory informers.SharedInformerFactory
 				scanner := bufio.NewScanner(readCloser)
 				for scanner.Scan() {
 					log.Info("Job Log: ", scanner.Text())
-
 				}
 
 			}
