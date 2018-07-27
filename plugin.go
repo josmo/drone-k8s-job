@@ -4,7 +4,6 @@ package main
 //Just the initial hack
 import (
 	log "github.com/Sirupsen/logrus"
-	"github.com/kr/pretty"
 	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
@@ -138,11 +137,11 @@ func (p Plugin) Exec() error {
 	p.Config.LoggingPods = make(map[string]bool)
 	informerFactory.Core().V1().Pods().Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			log.Debugf("Added %# v", pretty.Formatter(obj))
+			log.Debugf("Added %+v\n", obj)
 		},
 		UpdateFunc: func(oldObj, newObj interface{}) {
 			pod, _ := newObj.(*apiv1.Pod)
-			log.Debugf("Modified pod status %# v", pretty.Formatter(pod.Status))
+			log.Debugf("Modified pod status %# v", pod.Status)
 
 			if pod.Status.Phase == apiv1.PodFailed {
 				err := p.writeOutContainerLogs(pod.Name, os.Stdout)
@@ -174,7 +173,7 @@ func (p Plugin) Exec() error {
 	//Listening to Jobs
 	informerFactory.Batch().V1().Jobs().Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			log.Debugf("Job Added %# v", pretty.Formatter(obj))
+			log.Debugf("Job Added %# v", obj)
 			log.Info("Starting Job in K8s")
 		},
 		DeleteFunc: func(obj interface{}) {
