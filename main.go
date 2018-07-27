@@ -57,6 +57,11 @@ func main() {
 			EnvVar: "PLUGIN_TIMEOUT",
 			Value:  120,
 		},
+		cli.BoolFlag{
+			Name:   "debug",
+			Usage:  "Enable debugging messages",
+			EnvVar: "PLUGIN_DEBUG",
+		},
 	}
 
 	if err := app.Run(os.Args); err != nil {
@@ -74,6 +79,7 @@ func run(c *cli.Context) error {
 			Template:  c.String("template"),
 			Cleanup:   c.BoolT("cleanup"),
 			Timeout:   c.Int64("timeout"),
+			Debug:     c.Bool("debug"),
 		},
 	}
 	return plugin.Exec()

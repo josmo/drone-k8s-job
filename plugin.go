@@ -4,6 +4,7 @@ package main
 //Just the initial hack
 import (
 	log "github.com/Sirupsen/logrus"
+	"github.com/kr/pretty"
 	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
@@ -26,14 +27,16 @@ import (
 
 type (
 	Config struct {
-		URL        string
-		Token      string
-		Insecure   bool
-		Namespace  string
-		Template   string
-		Cleanup    bool
-		Timeout    int64
-		KubeClient kubernetes.Interface
+		URL         string
+		Token       string
+		Insecure    bool
+		Namespace   string
+		Template    string
+		Cleanup     bool
+		Timeout     int64
+		Debug       bool
+		LoggingPods map[string]struct{}
+		KubeClient  kubernetes.Interface
 	}
 	Build struct {
 		Tag     string
@@ -75,6 +78,9 @@ func (p Plugin) Exec() error {
 	if p.Config.Template == "" {
 		return errors.New("eek: Must have a Template")
 	}
+	if p.Config.Debug {
+		log.SetLevel(log.DebugLevel)
+	}
 	config := &rest.Config{
 		Host:            p.Config.URL,
 		BearerToken:     p.Config.Token,
@@ -103,7 +109,7 @@ func (p Plugin) Exec() error {
 	codecs := serializer.NewCodecFactory(scheme)
 	e := runtime.DecodeInto(codecs.UniversalDecoder(), json, &jobToCreate)
 	if e != nil {
-		log.Fatal("Error decoding yaml file to json", e)
+		return e
 	}
 	jobClient := p.Config.KubeClient.BatchV1().Jobs(p.Config.Namespace)
 	job, err := jobClient.Create(&jobToCreate)
@@ -128,14 +134,43 @@ func (p Plugin) Exec() error {
 				options.LabelSelector = labelSelect.String()
 			}))
 
-	informerFactory.Batch().V1().Jobs().Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	//Listening to pods
+	p.Config.LoggingPods = make(map[string]struct{})
+	informerFactory.Core().V1().Pods().Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			log.Info("Added ", obj)
-			p.logJobContainers(informerFactory, job.Name, jobClient, endMessage)
+			log.Debugf("Added %# v", pretty.Formatter(obj))
 		},
 		UpdateFunc: func(oldObj, newObj interface{}) {
-			job, _ := newObj.(v1.Job)
-			log.Info("Modified with status", job.Status)
+			pod, _ := newObj.(*apiv1.Pod)
+			log.Debugf("Modified pod status %# v", pretty.Formatter(pod.Status))
+
+			if pod.Status.Phase == apiv1.PodFailed {
+				err := p.writeOutContainerLogs(pod.Name, os.Stdout)
+				if err != nil {
+					endMessage <- err
+				}
+				endMessage <- errors.New("This job failed!!!")
+			}
+			if pod.Status.Phase == apiv1.PodSucceeded {
+				err := p.writeOutContainerLogs(pod.Name, os.Stdout)
+				if err != nil {
+					endMessage <- err
+				}
+				endMessage <- nil
+			}
+			if pod.Status.Phase == apiv1.PodRunning {
+				err := p.writeOutContainerLogs(pod.Name, os.Stdout)
+				if err != nil {
+					endMessage <- err
+				}
+			}
+		},
+	})
+	//Listening to Jobs
+	informerFactory.Batch().V1().Jobs().Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			log.Debugf("Job Added %# v", pretty.Formatter(obj))
+			log.Info("Starting Job in K8s")
 		},
 		DeleteFunc: func(obj interface{}) {
 			endMessage <- errors.New("Job was delete out of band")
@@ -152,41 +187,19 @@ func (p Plugin) Exec() error {
 }
 
 func (p Plugin) writeOutContainerLogs(podName string, writer io.Writer) error {
-	req := p.Config.KubeClient.CoreV1().Pods(p.Config.Namespace).GetLogs(podName, &apiv1.PodLogOptions{
-		Follow: true,
-	})
-	readCloser, err := req.Stream()
-	if err != nil {
-		return err
+	if _, ok := p.Config.LoggingPods[podName]; !ok {
+		p.Config.LoggingPods[podName] = struct{}{}
+		req := p.Config.KubeClient.CoreV1().Pods(p.Config.Namespace).GetLogs(podName, &apiv1.PodLogOptions{
+			Follow: true,
+		})
+		readCloser, err := req.Stream()
+		if err != nil {
+			return err
+		}
+		defer readCloser.Close()
+		io.Copy(writer, readCloser)
 	}
-	defer readCloser.Close()
-	io.Copy(writer, readCloser)
 	return nil
-}
-
-func (p Plugin) logJobContainers(informerFactory informers.SharedInformerFactory, name string, jobClient v12.JobInterface, ch chan<- error) {
-	informerFactory.Core().V1().Pods().Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
-			log.Info("Added ", obj)
-		},
-		UpdateFunc: func(oldObj, newObj interface{}) {
-			pod, _ := newObj.(*apiv1.Pod)
-			log.Info("Modified pod status", pod.Status)
-			if pod.Status.Phase == apiv1.PodFailed {
-				ch <- errors.New("This job failed!!!")
-			}
-			if pod.Status.Phase == apiv1.PodSucceeded {
-				ch <- nil
-			}
-			if pod.Status.Phase == apiv1.PodRunning {
-				err := p.writeOutContainerLogs(pod.Name, os.Stdout)
-				if err != nil {
-					ch <- err
-				}
-			}
-		},
-	})
-	informerFactory.Start(wait.NeverStop)
 }
 
 func deleteJob(name string, jobClient v12.JobInterface, cleanup bool) error {

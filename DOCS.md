@@ -11,6 +11,7 @@ The following parameters are used to configure this plugin:
 - `template` - file location for the job template [sample](job.yml)
 - `cleanup` - default true: will remove the job upon success or failure
 - `timeout` -  default 120: will timeout watching the job after 120 seconds and "try" to clean up the job
+- `debug` - default false: will add debug information
 The following is a sample k8s deployment configuration in your `.drone.yml` file:
 
 ```yaml
@@ -35,6 +36,7 @@ deploy:
     insecure: false
     template: job.yml
     cleanup: false
+    debug: true
     timeout: 200
 ```
 
