@@ -6,6 +6,11 @@
 [![](https://images.microbadger.com/badges/image/peloton/drone-k8s-job.svg)](https://microbadger.com/images/peloton/drone-k8s-job "Get your own image badge on microbadger.com")
 
 Drone plugin to deploy a job in k8s. For the usage information and a listing of the available options please take a look at [the docs](DOCS.md).
+ 
+## Experimental!!!!
+
+This is currently in an experimental phase. Currently insecure and cert aren't implemented. Please feel free to provide feedback and suggestions
+
 
 ## Versions
 
@@ -30,8 +35,8 @@ docker run --rm                          \
   -e PLUGIN_TOKEN=<token>                \
   -e PLUGIN_CERT=<cert>                  \
   -e PLUGIN_INSECURE=<true>              \
-  -e PLUGIN_NAMESPACES=<namespaces>        \
-  -e JOB_TEMPLATE=job.yml 
+  -e PLUGIN_NAMESPACES=<namespaces>      \
+  -e JOB_TEMPLATE=job.yml                |
   -v $(pwd):$(pwd)                       \
   -w $(pwd)                              \
   peloton/drone-k8s-job 

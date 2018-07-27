@@ -36,7 +36,7 @@ func main() {
 			EnvVar: "PLUGIN_INSECURE",
 		},
 		cli.StringFlag{
-			Name:	"namespace",
+			Name:   "namespace",
 			Usage:  "namespace for the job",
 			Value:  apiv1.NamespaceDefault,
 			EnvVar: "PLUGIN_NAMESPACE",
@@ -52,18 +52,11 @@ func main() {
 			EnvVar: "PLUGIN_CLEANUP",
 		},
 		cli.Int64Flag{
-			Name: "timeout",
-			Usage: "How long will the service listen till it times out",
-			EnvVar: "PLUGING_TIMTEOUT",
+			Name:   "timeout",
+			Usage:  "How long will the service listen till it times out",
+			EnvVar: "PLUGIN_TIMEOUT",
 			Value:  120,
 		},
-		//TODO: implement this
-		cli.BoolTFlag{
-			Name: "tail",
-			Usage: "This is tail the log, make sure the job will actually end",
-			EnvVar: "PLUGIN_TAIL",
-		},
-
 	}
 
 	if err := app.Run(os.Args); err != nil {
@@ -81,7 +74,6 @@ func run(c *cli.Context) error {
 			Template:  c.String("template"),
 			Cleanup:   c.BoolT("cleanup"),
 			Timeout:   c.Int64("timeout"),
-			Tail:      c.BoolT("tail"),
 		},
 	}
 	return plugin.Exec()

@@ -1,4 +1,5 @@
 package main
+
 // this is taken and modified from:
 // https://raw.githubusercontent.com/drone-plugins/drone-slack/master/template.go
 import (

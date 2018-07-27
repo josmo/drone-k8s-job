@@ -11,6 +11,6 @@ spec:
         command:
           - "bin/bash"
           - "-c"
-          - "for i in `seq 5` ; do echo $i ; sleep 5 ; done"
+          - "for i in `seq 3` ; do echo $i ; sleep 5 ; done"
       restartPolicy: Never
   backoffLimit: 0
