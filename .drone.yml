@@ -48,6 +48,7 @@ pipeline:
 
   publish_linux_amd64:
     image: plugins/docker
+    group: publish
     username: josmo
     repo: peloton/drone-k8s-job
     auto_tag: true
@@ -58,6 +59,7 @@ pipeline:
 
   publish_linux_arm64:
     image: plugins/docker
+    group: publish
     username: josmo
     repo: peloton/drone-k8s-job
     auto_tag: true
@@ -69,6 +71,7 @@ pipeline:
 
   publish_linux_arm:
     image: plugins/docker
+    group: publish
     username: josmo
     repo: peloton/drone-k8s-job
     auto_tag: true
