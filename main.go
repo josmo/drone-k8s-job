@@ -9,14 +9,17 @@ import (
 	apiv1 "k8s.io/api/core/v1"
 )
 
-var build string // build number set at compile-time
+var (
+	version = "0.0.0"
+	build   = "0"
+)
 
 func main() {
 	app := cli.NewApp()
 	app.Name = "drone k8s job"
 	app.Usage = "drone k8s job"
 	app.Action = run
-	app.Version = fmt.Sprintf("1.0.0+%s", build)
+	app.Version = fmt.Sprintf("%s+%s", version, build)
 
 	app.Flags = []cli.Flag{
 
