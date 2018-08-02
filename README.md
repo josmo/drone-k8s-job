@@ -9,7 +9,7 @@ Drone plugin to deploy a job in k8s. For the usage information and a listing of 
  
 ## Experimental!!!!
 
-This is currently in an experimental phase. Currently insecure and cert aren't implemented. Please feel free to provide feedback and suggestions
+This is currently in an experimental phase. Please feel free to provide feedback and suggestions
 
 
 ## Versions
