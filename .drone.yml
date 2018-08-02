@@ -27,7 +27,7 @@ pipeline:
       if test "${DRONE_TAG}" = ""; then
         go build -v -ldflags "-X main.build=${DRONE_BUILD_NUMBER}" -a -o release/linux/amd64/${DRONE_REPO_NAME}
       else
-        go build -v -ldflags "-X main.version=${DRONE_TAG##v} -X main.build=${DRONE_BUILD_NUMBER}" -a -o release/linux/amd64/{DRONE_REPO_NAME}
+        go build -v -ldflags "-X main.version=${DRONE_TAG##v} -X main.build=${DRONE_BUILD_NUMBER}" -a -o release/linux/amd64/${DRONE_REPO_NAME}
       fi
 
   build_linux_arm64:
@@ -42,7 +42,7 @@ pipeline:
         if test "${DRONE_TAG}" = ""; then
           go build -v -ldflags "-X main.build=${DRONE_BUILD_NUMBER}" -a -o release/linux/arm64/${DRONE_REPO_NAME}
         else
-          go build -v -ldflags "-X main.version=${DRONE_TAG##v} -X main.build=${DRONE_BUILD_NUMBER}" -a -o release/linux/arm64/{DRONE_REPO_NAME}
+          go build -v -ldflags "-X main.version=${DRONE_TAG##v} -X main.build=${DRONE_BUILD_NUMBER}" -a -o release/linux/arm64/${DRONE_REPO_NAME}
         fi
 
   build_linux_arm:
@@ -58,7 +58,7 @@ pipeline:
         if test "${DRONE_TAG}" = ""; then
           go build -v -ldflags "-X main.build=${DRONE_BUILD_NUMBER}" -a -o release/linux/arm/${DRONE_REPO_NAME}
         else
-          go build -v -ldflags "-X main.version=${DRONE_TAG##v} -X main.build=${DRONE_BUILD_NUMBER}" -a -o release/linux/arm/{DRONE_REPO_NAME}
+          go build -v -ldflags "-X main.version=${DRONE_TAG##v} -X main.build=${DRONE_BUILD_NUMBER}" -a -o release/linux/arm/${DRONE_REPO_NAME}
         fi
 
   publish_linux_amd64:
