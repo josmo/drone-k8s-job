@@ -5,6 +5,7 @@ package main
 import (
 	"encoding/base64"
 	log "github.com/Sirupsen/logrus"
+	"github.com/drone/drone-template-lib/template"
 	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
@@ -250,6 +251,5 @@ func openAndSub(templateFile string, p Plugin) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	//potty humor!  Render trim toilet paper!  Ha ha, so funny.
-	return RenderTrim(string(t), p)
+	return template.RenderTrim(string(t), p)
 }
