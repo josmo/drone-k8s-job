@@ -11,19 +11,16 @@ Drone plugin to deploy a job in k8s. For the usage information and a listing of 
 
 This is currently in an experimental phase. Please feel free to provide feedback and suggestions
 
-
 ## Versions
 
 This repo is using auto-tag from the drone-docker plugin meaning that
-1. master will always publish to 'latest' in docker hub peloton/drone-k8s-job
-2. tags will follow semver at the 1.0.0+ - initial 0.x.x may have breaking changes
+
+ 1. master will always publish to 'latest' in docker hub peloton/drone-k8s-job
+ 1. tags will follow semver at the 1.0.0+ - initial 0.x.x may have breaking changes
 
 ## Binary
 
 Build the binary using `go build`:
-
-
-### Example
 
 ## Usage
 
@@ -42,12 +39,9 @@ docker run --rm                          \
   peloton/drone-k8s-job 
 ```
 
-
 ### Contribution
 
-This repo is setup in a way that if you enable a personal drone server to build your fork it will
- build and publish your image (makes it easier to test PRs and use the image till the contributions get merged)
+This repo is setup in a way that if you enable a personal drone server to build your fork it will build and publish your image (makes it easier to test PRs and use the image till the contributions get merged)
  
-* Build local ```DRONE_REPO_OWNER=josmo DRONE_REPO_NAME=drone-k8s-job drone exec```
-* on your server just make sure you have DOCKER_USERNAME, DOCKER_PASSWORD, and PLUGIN_REPO set as secrets
- 
+ * Build local ```DRONE_REPO_OWNER=josmo DRONE_REPO_NAME=drone-k8s-job drone exec```
+ * on your server just make sure you have DOCKER_USERNAME, DOCKER_PASSWORD, and PLUGIN_REPO set as secrets
