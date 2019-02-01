@@ -1,6 +1,6 @@
 # drone-k8s-job
 
-[![Build Status](https://drone.pelo.tech/api/badges/josmo/drone-k8s-job/status.svg)](https://drone.pelo.tech/josmo/drone-k8s-job)
+[![Build Status](https://cloud.drone.io/api/badges/josmo/drone-k8s-job/status.svg)](https://cloud.drone.io/josmo/drone-k8s-job)
 [![Go Doc](https://godoc.org/github.com/josmo/drone-k8s-job?status.svg)](http://godoc.org/github.com/josmo/drone-k8s-job)
 [![Go Report](https://goreportcard.com/badge/github.com/josmo/drone-k8s-job)](https://goreportcard.com/report/github.com/josmo/drone-k8s-job)
 [![](https://images.microbadger.com/badges/image/peloton/drone-k8s-job.svg)](https://microbadger.com/images/peloton/drone-k8s-job "Get your own image badge on microbadger.com")
