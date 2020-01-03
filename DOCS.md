@@ -1,4 +1,4 @@
-Use this drone plugin to create and watch a K8s Job.  The idea is to be able to deploy
+Use this drone plugin to creates and watches a K8s Job.  The idea is to be able to deploy
 a service and then deploy a job that can test the service in k8s and clean it up.
 
 The following parameters are used to configure this plugin:
@@ -15,29 +15,29 @@ The following parameters are used to configure this plugin:
 The following is a sample k8s deployment configuration in your `.drone.yml` file:
 
 ```yaml
-deploy:
-  k8s-job:
-    image: peloton/drone-k8s-job
-    url: https://k8s.server/
-    token: asldkfj
-    insecure: false
-    template: job.yml
+  - name: k8s-job
+    image: pelotech/drone-k8s-job
+    settings:
+      url: https://k8s.server/
+      token: asldkfj
+      insecure: false
+      template: job.yml
 ```
 
 Or with no cleanup, different timeout, and different namespace
 
 ```yaml
-deploy:
-  k8s-job:
-    image: peloton/drone-k8s-job
-    url: https://k8s.server/
-    token: asldkfj
-    namespace: testing
-    insecure: false
-    template: job.yml
-    cleanup: false
-    debug: true
-    timeout: 200
+  - name: k8s-job
+    image: pelotech/drone-k8s-job
+    settings: 
+      url: https://k8s.server/
+      token: asldkfj
+      namespace: testing
+      insecure: false
+      template: job.yml
+      cleanup: false
+      debug: true
+      timeout: 200
 ```
 
 if you want to add secrets for the token it's KUBERNETES_TOKEN, KUBERNETES_URL, KUBERNETES_CA, JOB_TEMPLATE
